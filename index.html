@@ -2,16 +2,14 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Jump Cube</title>
 
 <style>
-* { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-
 body {
   margin: 0;
   overflow: hidden;
-  background: linear-gradient(180deg,#0f2027,#203a43,#2c5364);
+  background: linear-gradient(180deg, #0f2027, #203a43, #2c5364);
   font-family: system-ui, sans-serif;
   color: #fff;
 }
@@ -20,38 +18,56 @@ canvas { display: block; }
 
 .ui {
   position: absolute;
-  top: env(safe-area-inset-top, 12px);
-  left: env(safe-area-inset-left, 12px);
-  right: env(safe-area-inset-right, 12px);
+  top: 12px;
+  left: 12px;
+  right: 12px;
   display: flex;
   justify-content: space-between;
-  pointer-events: none;
 }
 
 .panel {
   background: rgba(0,0,0,.35);
   padding: 12px 16px;
-  border-radius: 14px;
+  border-radius: 12px;
   backdrop-filter: blur(6px);
-  pointer-events: auto;
+}
+
+button, select {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 button {
-  border: none;
-  border-radius: 14px;
-  padding: 12px 18px;
-  font-size: 16px;
-  font-weight: 600;
-  background: linear-gradient(135deg,#4ef3c2,#3acfd5);
+  background: linear-gradient(135deg, #4ef3c2, #3acfd5);
 }
 
 #jumpBtn {
   position: absolute;
-  bottom: calc(env(safe-area-inset-bottom,0px) + 20px);
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 24px;
-  padding: 20px 72px;
+  font-size: 26px;
+  padding: 22px 70px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu {
+  background: rgba(0,0,0,.55);
+  padding: 26px;
+  border-radius: 18px;
+  text-align: center;
+  min-width: 260px;
 }
 </style>
 </head>
@@ -65,97 +81,128 @@ button {
     Очки: <span id="score">0</span><br>
     Рекорд: <span id="best">0</span>
   </div>
+  <div class="panel">
+    <button id="pauseBtn">⏸</button>
+  </div>
 </div>
 
 <button id="jumpBtn">ПРЫЖОК</button>
 
+<div id="pauseMenu" class="overlay">
+  <div class="menu">
+    <h2>Пауза</h2>
+
+    <div>
+      Сложность:<br>
+      <select id="difficulty">
+        <option value="easy">Лёгкая</option>
+        <option value="normal" selected>Нормальная</option>
+        <option value="hard">Хард</option>
+      </select>
+    </div><br>
+
+    <div>
+      Режим:<br>
+      <select id="mode">
+        <option value="classic">Классика</option>
+        <option value="gravityChaos">Хаос гравитации</option>
+        <option value="speedRush">Speed Rush</option>
+      </select>
+    </div><br>
+
+    <button onclick="togglePause()">Продолжить</button>
+  </div>
+</div>
+
 <script>
-/* ===== CANVAS ===== */
+/* ================= CANVAS ================= */
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 function resize() {
   const dpr = devicePixelRatio || 1;
-  const h = window.visualViewport ? visualViewport.height : innerHeight;
   canvas.width = innerWidth * dpr;
-  canvas.height = h * dpr;
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+  canvas.height = innerHeight * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 resize();
 addEventListener('resize', resize);
 
-/* ===== SCALE ===== */
-const SCALE = Math.min(innerWidth / 390, 1.15);
-
-/* ===== CENTER ===== */
-const VIEW_H = window.visualViewport ? visualViewport.height : innerHeight;
-const CENTER_Y = VIEW_H * 0.5;
-
-/* ===== CONFIG ===== */
-const CONFIG = {
-  gravity: 0.7 * SCALE,
-  jump: 12.5 * SCALE,
-  speed: 2.4 * SCALE,
-  speedGrowth: 0.002
+/* ================= CONFIG ================= */
+const DIFFICULTIES = {
+  easy: { gravity: 0.6, jump: 13, baseSpeed: 2, speedGrowth: 0.0015 },
+  normal: { gravity: 0.7, jump: 12.5, baseSpeed: 2.4, speedGrowth: 0.0022 },
+  hard: { gravity: 0.8, jump: 12, baseSpeed: 2.9, speedGrowth: 0.003 }
 };
 
-/* ===== STATE ===== */
-const cube = {
-  x: 80 * SCALE,
-  size: 34 * SCALE,
-  y: 0,
-  vy: 0,
-  grounded: false
-};
+let config;
+let mode = 'classic';
+
+/* ================= STATE ================= */
+const centerY = innerHeight * 0.55;
+const cube = { x: 80, y: centerY - 60, size: 34, vy: 0, grounded: false };
 
 let platforms = [];
-let speed = CONFIG.speed;
+let speed = 0;
 let score = 0;
 let best = Number(localStorage.getItem('bestScore')) || 0;
+let paused = false;
 
-document.getElementById('best').textContent = best;
+/* ================= UI ================= */
+const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const pauseMenu = document.getElementById('pauseMenu');
+bestEl.textContent = best;
 
-/* ===== PLATFORMS ===== */
+/* ================= PLATFORMS ================= */
 function initPlatforms() {
-  const h = 20 * SCALE;
-  const w = 260 * SCALE;
-
-  platforms = [{
-    x: 0,
-    y: CENTER_Y - h / 2,
-    width: w,
-    height: h
-  }];
-
-  cube.y = platforms[0].y - cube.size;
+  platforms = [{ x: 0, y: centerY, width: 260, height: 20 }];
 }
 
 function addPlatform() {
   const last = platforms.at(-1);
   platforms.push({
-    x: last.x + last.width + 80 * SCALE,
-    y: clamp(
-      CENTER_Y + rand(-120, 120) * SCALE,
-      60,
-      canvas.height - 60
-    ),
-    width: rand(110,150) * SCALE,
-    height: 20 * SCALE
+    x: last.x + last.width + 80 + speed * 8,
+    y: clamp(last.y + rand(-60, 60), centerY - 150, centerY + 120),
+    width: rand(110, 150),
+    height: 20
   });
 }
 
-/* ===== INPUT ===== */
-jumpBtn.onpointerdown = e => {
-  e.preventDefault();
-  if (cube.grounded) {
-    cube.vy = -CONFIG.jump;
+/* ================= INPUT ================= */
+function jump() {
+  if (!paused && cube.grounded) {
+    cube.vy = -config.jump;
     cube.grounded = false;
   }
-};
+}
 
-/* ===== UPDATE ===== */
+jumpBtn.onclick = jump;
+pauseBtn.onclick = togglePause;
+
+addEventListener('keydown', e => {
+  if (e.key === 'Escape') togglePause();
+});
+
+/* ================= PAUSE ================= */
+function togglePause() {
+  paused = !paused;
+  pauseMenu.style.display = paused ? 'flex' : 'none';
+
+  if (!paused) {
+    config = DIFFICULTIES[difficulty.value];
+    mode = document.getElementById('mode').value;
+  }
+}
+
+/* ================= UPDATE ================= */
 function update() {
-  cube.vy += CONFIG.gravity;
+  if (paused) return;
+
+  let gravity = config.gravity;
+  if (mode === 'gravityChaos') gravity += rand(-0.2, 0.2);
+
+  cube.vy += gravity;
   cube.y += cube.vy;
   cube.grounded = false;
 
@@ -173,48 +220,54 @@ function update() {
     }
   }
 
-  platforms.forEach(p => p.x -= speed);
+  let speedMul = mode === 'speedRush' ? 2 : 1;
+  platforms.forEach(p => p.x -= speed * speedMul);
 
   if (platforms.at(-1).x < canvas.width) addPlatform();
-
   if (platforms[0].x + platforms[0].width < 0) {
     platforms.shift();
     score++;
-    document.getElementById('score').textContent = score;
+    scoreEl.textContent = score;
   }
 
-  speed += CONFIG.speedGrowth;
+  speed += config.speedGrowth * speedMul;
 
-  if (cube.y > canvas.height || cube.y < -cube.size) restart();
+  if (cube.y > canvas.height) restart();
 }
 
-/* ===== DRAW ===== */
+/* ================= DRAW ================= */
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   ctx.fillStyle = '#fff';
+  ctx.shadowColor = '#4ef3c2';
+  ctx.shadowBlur = 14;
   ctx.fillRect(cube.x, cube.y, cube.size, cube.size);
+  ctx.shadowBlur = 0;
 
   ctx.fillStyle = '#4ef3c2';
-  platforms.forEach(p => ctx.fillRect(p.x,p.y,p.width,p.height));
+  platforms.forEach(p => ctx.fillRect(p.x, p.y, p.width, p.height));
 }
 
-/* ===== LOOP ===== */
+/* ================= LOOP ================= */
 function loop() {
   update();
   draw();
   requestAnimationFrame(loop);
 }
 
-/* ===== HELPERS ===== */
-function rand(min,max){return Math.random()*(max-min)+min;}
-function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+/* ================= HELPERS ================= */
+function rand(min, max) { return Math.random() * (max - min) + min; }
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
-/* ===== START ===== */
+/* ================= START ================= */
 function restart() {
-  speed = CONFIG.speed;
+  config = DIFFICULTIES[difficulty.value];
+  cube.y = centerY - 60;
+  cube.vy = 0;
+  speed = config.baseSpeed;
   score = 0;
-  document.getElementById('score').textContent = 0;
+  scoreEl.textContent = 0;
   initPlatforms();
 }
 
