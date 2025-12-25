@@ -2,19 +2,29 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>Jump Cube</title>
 
 <style>
+* {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 body {
   margin: 0;
   overflow: hidden;
-  background: linear-gradient(180deg, #0f2027, #203a43, #2c5364);
+  background: linear-gradient(180deg,#0f2027,#203a43,#2c5364);
   font-family: system-ui, sans-serif;
   color: #fff;
 }
 
-canvas { display: block; }
+canvas {
+  display: block;
+  touch-action: none;
+}
 
 .ui {
   position: absolute;
@@ -23,6 +33,7 @@ canvas { display: block; }
   right: 12px;
   display: flex;
   justify-content: space-between;
+  pointer-events: none;
 }
 
 .panel {
@@ -30,6 +41,7 @@ canvas { display: block; }
   padding: 12px 16px;
   border-radius: 12px;
   backdrop-filter: blur(6px);
+  pointer-events: auto;
 }
 
 button, select {
@@ -38,10 +50,11 @@ button, select {
   padding: 10px 16px;
   font-size: 16px;
   font-weight: 600;
+  touch-action: manipulation;
 }
 
 button {
-  background: linear-gradient(135deg, #4ef3c2, #3acfd5);
+  background: linear-gradient(135deg,#4ef3c2,#3acfd5);
 }
 
 #jumpBtn {
@@ -51,6 +64,7 @@ button {
   transform: translateX(-50%);
   font-size: 26px;
   padding: 22px 70px;
+  z-index: 5;
 }
 
 .overlay {
@@ -60,6 +74,8 @@ button {
   display: none;
   align-items: center;
   justify-content: center;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .menu {
@@ -110,7 +126,7 @@ button {
       </select>
     </div><br>
 
-    <button onclick="togglePause()">Продолжить</button>
+    <button id="resumeBtn">Продолжить</button>
   </div>
 </div>
 
@@ -123,16 +139,16 @@ function resize() {
   const dpr = devicePixelRatio || 1;
   canvas.width = innerWidth * dpr;
   canvas.height = innerHeight * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 resize();
 addEventListener('resize', resize);
 
 /* ================= CONFIG ================= */
 const DIFFICULTIES = {
-  easy: { gravity: 0.6, jump: 13, baseSpeed: 2, speedGrowth: 0.0015 },
-  normal: { gravity: 0.7, jump: 12.5, baseSpeed: 2.4, speedGrowth: 0.0022 },
-  hard: { gravity: 0.8, jump: 12, baseSpeed: 2.9, speedGrowth: 0.003 }
+  easy:   { gravity:0.6, jump:13,   baseSpeed:2,   speedGrowth:0.0015 },
+  normal: { gravity:0.7, jump:12.5, baseSpeed:2.4, speedGrowth:0.0022 },
+  hard:   { gravity:0.8, jump:12,   baseSpeed:2.9, speedGrowth:0.003 }
 };
 
 let config;
@@ -140,7 +156,7 @@ let mode = 'classic';
 
 /* ================= STATE ================= */
 const centerY = innerHeight * 0.55;
-const cube = { x: 80, y: centerY - 60, size: 34, vy: 0, grounded: false };
+const cube = { x:80, y:centerY-60, size:34, vy:0, grounded:false };
 
 let platforms = [];
 let speed = 0;
@@ -149,49 +165,53 @@ let best = Number(localStorage.getItem('bestScore')) || 0;
 let paused = false;
 
 /* ================= UI ================= */
-const scoreEl = document.getElementById('score');
-const bestEl = document.getElementById('best');
-const pauseMenu = document.getElementById('pauseMenu');
-bestEl.textContent = best;
+const scoreEl = score;
+const bestEl = best;
+document.getElementById('best').textContent = best;
 
 /* ================= PLATFORMS ================= */
 function initPlatforms() {
-  platforms = [{ x: 0, y: centerY, width: 260, height: 20 }];
+  platforms = [{ x:0, y:centerY, width:260, height:20 }];
 }
 
 function addPlatform() {
   const last = platforms.at(-1);
   platforms.push({
     x: last.x + last.width + 80 + speed * 8,
-    y: clamp(last.y + rand(-60, 60), centerY - 150, centerY + 120),
-    width: rand(110, 150),
+    y: clamp(last.y + rand(-60,60), centerY-150, centerY+120),
+    width: rand(110,150),
     height: 20
   });
 }
 
-/* ================= INPUT ================= */
-function jump() {
+/* ================= INPUT (iOS SAFE) ================= */
+jumpBtn.addEventListener('pointerdown', e => {
+  e.preventDefault();
   if (!paused && cube.grounded) {
     cube.vy = -config.jump;
     cube.grounded = false;
   }
-}
+});
 
-jumpBtn.onclick = jump;
-pauseBtn.onclick = togglePause;
+pauseBtn.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  togglePause();
+});
 
-addEventListener('keydown', e => {
-  if (e.key === 'Escape') togglePause();
+resumeBtn.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  togglePause();
 });
 
 /* ================= PAUSE ================= */
 function togglePause() {
   paused = !paused;
   pauseMenu.style.display = paused ? 'flex' : 'none';
+  canvas.style.pointerEvents = paused ? 'none' : 'auto';
 
   if (!paused) {
     config = DIFFICULTIES[difficulty.value];
-    mode = document.getElementById('mode').value;
+    mode = modeSelect.value;
   }
 }
 
@@ -200,7 +220,7 @@ function update() {
   if (paused) return;
 
   let gravity = config.gravity;
-  if (mode === 'gravityChaos') gravity += rand(-0.2, 0.2);
+  if (mode === 'gravityChaos') gravity += rand(-0.2,0.2);
 
   cube.vy += gravity;
   cube.y += cube.vy;
@@ -220,14 +240,15 @@ function update() {
     }
   }
 
-  let speedMul = mode === 'speedRush' ? 2 : 1;
+  const speedMul = mode === 'speedRush' ? 2 : 1;
   platforms.forEach(p => p.x -= speed * speedMul);
 
   if (platforms.at(-1).x < canvas.width) addPlatform();
+
   if (platforms[0].x + platforms[0].width < 0) {
     platforms.shift();
     score++;
-    scoreEl.textContent = score;
+    document.getElementById('score').textContent = score;
   }
 
   speed += config.speedGrowth * speedMul;
@@ -242,11 +263,11 @@ function draw() {
   ctx.fillStyle = '#fff';
   ctx.shadowColor = '#4ef3c2';
   ctx.shadowBlur = 14;
-  ctx.fillRect(cube.x, cube.y, cube.size, cube.size);
+  ctx.fillRect(cube.x,cube.y,cube.size,cube.size);
   ctx.shadowBlur = 0;
 
   ctx.fillStyle = '#4ef3c2';
-  platforms.forEach(p => ctx.fillRect(p.x, p.y, p.width, p.height));
+  platforms.forEach(p => ctx.fillRect(p.x,p.y,p.width,p.height));
 }
 
 /* ================= LOOP ================= */
@@ -257,17 +278,17 @@ function loop() {
 }
 
 /* ================= HELPERS ================= */
-function rand(min, max) { return Math.random() * (max - min) + min; }
-function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function rand(min,max){return Math.random()*(max-min)+min;}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
 
 /* ================= START ================= */
 function restart() {
   config = DIFFICULTIES[difficulty.value];
-  cube.y = centerY - 60;
+  cube.y = centerY-60;
   cube.vy = 0;
   speed = config.baseSpeed;
   score = 0;
-  scoreEl.textContent = 0;
+  document.getElementById('score').textContent = 0;
   initPlatforms();
 }
 
