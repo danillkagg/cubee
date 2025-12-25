@@ -7,22 +7,21 @@
                initial-scale=1,
                maximum-scale=1,
                user-scalable=no">
-
-<title>Jump Cube</title>
+<title>Jump Cube - ХАРДКОР</title>
 
 <style>
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #0f2027, #203a43, #2c5364);
+  background: linear-gradient(180deg, #0a1418, #15252d, #1c3a47);
   overflow: hidden;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   touch-action: manipulation;
   color: #fff;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Центровка canvas */
 #gameWrapper {
   position: fixed;
   inset: 0;
@@ -39,60 +38,220 @@ canvas {
 /* UI */
 .ui {
   position: fixed;
-  top: env(safe-area-inset-top, 12px);
+  top: max(12px, env(safe-area-inset-top, 12px));
   left: 12px;
   right: 12px;
   display: flex;
   justify-content: space-between;
   pointer-events: none;
+  z-index: 10;
 }
 
 .panel {
   pointer-events: auto;
-  background: rgba(0,0,0,.35);
-  padding: 10px 14px;
-  border-radius: 14px;
-  backdrop-filter: blur(6px);
+  background: rgba(0,0,0,.6);
+  padding: 12px 16px;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,50,50,0.3);
+  font-weight: 700;
+  min-width: 120px;
+  box-shadow: 0 4px 12px rgba(255,0,0,0.2);
+}
+
+#scorePanel {
+  text-align: left;
+}
+
+#controlPanel {
+  text-align: right;
 }
 
 button, select {
   border: none;
   border-radius: 14px;
-  padding: 10px 16px;
+  padding: 12px 18px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: linear-gradient(135deg, #ff4757, #ff3838);
+  color: white;
+  min-width: 120px;
+  border: 2px solid rgba(255,255,255,0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
-button {
-  background: linear-gradient(135deg, #4ef3c2, #3acfd5);
-  color: #000;
+button:active {
+  transform: scale(0.95);
+}
+
+button:hover {
+  box-shadow: 0 0 25px rgba(255, 71, 87, 0.6);
 }
 
 #jumpBtn {
   position: fixed;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  bottom: max(24px, env(safe-area-inset-bottom, 24px));
   left: 50%;
   transform: translateX(-50%);
-  font-size: 24px;
-  padding: 20px 64px;
+  font-size: 26px;
+  padding: 28px 90px;
+  z-index: 10;
+  box-shadow: 0 10px 40px rgba(255,0,0,0.4);
+  border: 3px solid rgba(255,255,255,0.3);
+  font-weight: 800;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, #ff3838, #ff0000);
 }
 
 /* Pause menu */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.65);
+  background: rgba(0,0,0,.9);
   display: none;
   align-items: center;
   justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.3s ease;
 }
 
 .menu {
-  background: rgba(0,0,0,.55);
-  padding: 26px;
-  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(28, 0, 0, 0.95), rgba(70, 0, 0, 0.95));
+  padding: 32px;
+  border-radius: 24px;
   text-align: center;
-  min-width: 260px;
+  min-width: 320px;
+  max-width: 90vw;
+  border: 2px solid rgba(255, 50, 50, 0.5);
+  box-shadow: 0 25px 70px rgba(255,0,0,0.3);
+  animation: slideUp 0.4s ease;
+}
+
+.menu h2 {
+  margin-top: 0;
+  color: #ff4757;
+  font-size: 32px;
+  text-shadow: 0 2px 10px rgba(255,0,0,0.5);
+}
+
+.menu select {
+  width: 100%;
+  margin: 8px 0;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  border: 2px solid rgba(255,50,50,0.5);
+  font-weight: 600;
+}
+
+/* Game over overlay */
+#gameOverMenu {
+  display: none;
+}
+
+#finalScore {
+  font-size: 52px;
+  font-weight: 900;
+  color: #ff3838;
+  margin: 20px 0;
+  text-shadow: 0 0 20px rgba(255,0,0,0.7);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.score-animation {
+  animation: pulse 0.2s ease, shake 0.3s ease;
+}
+
+/* Difficulty warning */
+.difficulty-warning {
+  color: #ff4757;
+  font-size: 12px;
+  margin-top: 5px;
+  font-weight: 700;
+}
+
+/* Screenshake */
+.shake {
+  animation: shake 0.5s ease;
+}
+
+/* Speed warning */
+#speedWarning {
+  position: fixed;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 0, 0, 0.8);
+  padding: 10px 20px;
+  border-radius: 10px;
+  display: none;
+  font-weight: 700;
+  z-index: 20;
+}
+
+/* Instructions */
+#instructions {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  background: rgba(0,0,0,0.85);
+  padding: 25px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  display: none;
+  z-index: 50;
+  border: 2px solid #ff4757;
+  max-width: 400px;
+}
+
+#instructions h3 {
+  color: #ff4757;
+  font-size: 24px;
+}
+
+/* Particles */
+.particle {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Combo indicator */
+#combo {
+  position: fixed;
+  top: 150px;
+  right: 20px;
+  font-size: 24px;
+  font-weight: 900;
+  color: #ff4757;
+  text-shadow: 0 0 10px rgba(255,0,0,0.5);
+  display: none;
+  z-index: 15;
 }
 </style>
 </head>
@@ -103,42 +262,84 @@ button {
   <canvas id="canvas"></canvas>
 </div>
 
+<!-- Particles container -->
+<div id="particles"></div>
+
+<!-- Game UI -->
 <div class="ui">
-  <div class="panel">
-    Очки: <span id="score">0</span><br>
-    Рекорд: <span id="best">0</span>
+  <div id="scorePanel" class="panel">
+    <div>ОЧКИ: <span id="score">0</span></div>
+    <div>РЕКОРД: <span id="best">0</span></div>
+    <div id="speedDisplay">СКОРОСТЬ: <span id="speedValue">1.0x</span></div>
   </div>
-  <div class="panel">
-    <button id="pauseBtn">⏸</button>
+  <div id="controlPanel" class="panel">
+    <button id="pauseBtn">⏸ ПАУЗА</button>
   </div>
 </div>
 
-<button id="jumpBtn">ПРЫЖОК</button>
+<!-- Combo display -->
+<div id="combo"></div>
 
+<!-- Speed warning -->
+<div id="speedWarning">ВНИМАНИЕ! ВЫСОКАЯ СКОРОСТЬ!</div>
+
+<button id="jumpBtn">ПРЫЖОК!</button>
+
+<!-- Pause Menu -->
 <div id="pauseMenu" class="overlay">
   <div class="menu">
-    <h2>Пауза</h2>
-
+    <h2>ПАУЗА</h2>
+    
     <div>
-      Сложность:<br>
+      <label>СЛОЖНОСТЬ:</label><br>
       <select id="difficulty">
-        <option value="easy">Лёгкая</option>
-        <option value="normal" selected>Нормальная</option>
-        <option value="hard">Хард</option>
+        <option value="hard">ХАРД (базовая)</option>
+        <option value="extreme" selected>ЭКСТРИМ +25%</option>
+        <option value="nightmare">КОШМАР +50%</option>
+        <option value="impossible">НЕВОЗМОЖНО +100%</option>
       </select>
+      <div class="difficulty-warning" id="difficultyWarning"></div>
     </div><br>
-
+    
     <div>
-      Режим:<br>
+      <label>РЕЖИМ:</label><br>
       <select id="mode">
-        <option value="classic">Классика</option>
-        <option value="gravityChaos">Хаос гравитации</option>
-        <option value="speedRush">Speed Rush</option>
+        <option value="classic">КЛАССИКА</option>
+        <option value="gravityChaos">ХАОС ГРАВИТАЦИИ</option>
+        <option value="speedRush">СКОРОСТНОЙ РЕЖИМ</option>
+        <option value="narrowPlatforms">УЗКИЕ ПЛАТФОРМЫ</option>
+        <option value="movingPlatforms">ДВИЖУЩИЕСЯ ПЛАТФОРМЫ</option>
       </select>
     </div><br>
-
-    <button onclick="togglePause()">Продолжить</button>
+    
+    <button onclick="togglePause()">▶ ПРОДОЛЖИТЬ</button><br><br>
+    <button onclick="restartGame()">🔥 НАЧАТЬ ЗАНОВО</button><br><br>
+    <button onclick="resetBestScore()">🗑️ СБРОСИТЬ РЕКОРД</button>
   </div>
+</div>
+
+<!-- Game Over Menu -->
+<div id="gameOverMenu" class="overlay">
+  <div class="menu">
+    <h2>ИГРА ОКОНЧЕНА!</h2>
+    <div id="finalScore">0</div>
+    <div>ЛУЧШИЙ: <span id="bestScoreDisplay">0</span></div>
+    <div id="deathMessage"></div><br>
+    <button onclick="startNewGame()">💀 НОВАЯ ИГРА</button><br><br>
+    <button onclick="showPauseMenu()">⚙️ НАСТРОЙКИ</button>
+  </div>
+</div>
+
+<!-- Instructions -->
+<div id="instructions">
+  <h3>ВНИМАНИЕ: ХАРДКОР РЕЖИМ</h3>
+  <p>Сложность увеличена на 25%!</p>
+  <p>• Высокая гравитация</p>
+  <p>• Быстрый рост скорости</p>
+  <p>• Меньше времени на реакцию</p>
+  <p>• Узкие платформы</p>
+  <p>Удачи, тебе понадобится!</p>
+  <button onclick="hideInstructions()">ПРИНЯТЬ ВЫЗОВ!</button>
 </div>
 
 <script>
@@ -146,194 +347,693 @@ button {
 const GAME_WIDTH  = 390;
 const GAME_HEIGHT = 844;
 
-/* ================= CANVAS ================= */
+/* ================= CANVAS SETUP ================= */
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-
 let scale = 1;
 
 function resize() {
   const dpr = window.devicePixelRatio || 1;
-
   const sw = window.innerWidth;
   const sh = window.innerHeight;
-
+  
   scale = Math.min(sw / GAME_WIDTH, sh / GAME_HEIGHT);
-
-  canvas.style.width  = GAME_WIDTH  * scale + 'px';
+  
+  canvas.style.width  = GAME_WIDTH * scale + 'px';
   canvas.style.height = GAME_HEIGHT * scale + 'px';
-
-  canvas.width  = GAME_WIDTH  * dpr;
-  canvas.height = GAME_HEIGHT * dpr;
-
-  ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+  canvas.width  = Math.floor(GAME_WIDTH * dpr);
+  canvas.height = Math.floor(GAME_HEIGHT * dpr);
+  
+  ctx.scale(dpr, dpr);
 }
 resize();
 window.addEventListener('resize', resize);
 
-/* ================= CONFIG ================= */
+/* ================= DIFFICULTIES (УВЕЛИЧЕНО НА 25%) ================= */
 const DIFFICULTIES = {
-  easy:   { gravity: 0.55, jump: 13.2, baseSpeed: 2.0, speedGrowth: 0.0015 },
-  normal: { gravity: 0.65, jump: 12.6, baseSpeed: 2.4, speedGrowth: 0.0022 },
-  hard:   { gravity: 0.75, jump: 12.0, baseSpeed: 2.9, speedGrowth: 0.0030 }
+  hard: { 
+    gravity: 0.85,      // +25%
+    jump: 10.8,         // -25%
+    baseSpeed: 3.2,     // +25%
+    speedGrowth: 0.0035 // +25%
+  },
+  extreme: { 
+    gravity: 0.94,      // +25% от харда
+    jump: 9.7,          // -25%
+    baseSpeed: 3.6,     // +25%
+    speedGrowth: 0.0042 // +25%
+  },
+  nightmare: { 
+    gravity: 1.06,      // +50%
+    jump: 8.4,          // -50%
+    baseSpeed: 4.0,     // +50%
+    speedGrowth: 0.0050 // +50%
+  },
+  impossible: { 
+    gravity: 1.25,      // +100%
+    jump: 6.0,          // -100%
+    baseSpeed: 5.0,     // +100%
+    speedGrowth: 0.0065 // +100%
+  }
 };
 
-let config;
-let mode = 'classic';
-
-/* ================= STATE ================= */
+/* ================= GAME STATE ================= */
 const groundY = GAME_HEIGHT * 0.55;
 
 const cube = {
-  x: 80,
+  x: 70,
   y: groundY - 60,
-  size: 34,
+  size: 36,
   vy: 0,
-  grounded: false
+  grounded: false,
+  color: '#ff4757',
+  trail: []
 };
 
 let platforms = [];
+let particles = [];
 let speed = 0;
 let score = 0;
+let combo = 0;
+let comboTimeout = null;
+let bestScore = 0;
 let paused = false;
+let gameOver = false;
+let config = DIFFICULTIES.extreme; // По умолчанию ЭКСТРИМ
+let mode = 'classic';
+let screenShake = 0;
+let lastPlatformY = groundY;
 
+/* ================= DOM ELEMENTS ================= */
 const scoreEl = document.getElementById('score');
-const bestEl  = document.getElementById('best');
+const bestEl = document.getElementById('best');
+const speedValue = document.getElementById('speedValue');
+const speedWarning = document.getElementById('speedWarning');
 const pauseMenu = document.getElementById('pauseMenu');
+const gameOverMenu = document.getElementById('gameOverMenu');
+const finalScoreEl = document.getElementById('finalScore');
+const bestScoreDisplay = document.getElementById('bestScoreDisplay');
+const deathMessage = document.getElementById('deathMessage');
+const difficultyWarning = document.getElementById('difficultyWarning');
+const instructions = document.getElementById('instructions');
+const jumpBtn = document.getElementById('jumpBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const difficultySelect = document.getElementById('difficulty');
+const modeSelect = document.getElementById('mode');
+const comboEl = document.getElementById('combo');
 
-let best = Number(localStorage.getItem('bestScore')) || 0;
-bestEl.textContent = best;
+/* ================= INITIALIZATION ================= */
+function init() {
+  // Load best score
+  bestScore = Number(localStorage.getItem('jumpCubeHardBestScore')) || 0;
+  bestEl.textContent = bestScore;
+  bestScoreDisplay.textContent = bestScore;
+  
+  // Set difficulty warning
+  updateDifficultyWarning();
+  
+  // Show instructions
+  setTimeout(() => {
+    instructions.style.display = 'block';
+  }, 500);
+  
+  initPlatforms();
+  startGameLoop();
+}
 
 /* ================= PLATFORMS ================= */
 function initPlatforms() {
   platforms = [{
     x: 0,
     y: groundY,
-    width: 260,
-    height: 20
+    width: 240,
+    height: 20,
+    color: '#ff4757',
+    moving: false,
+    moveSpeed: 0,
+    direction: 1
   }];
+  
+  lastPlatformY = groundY;
+  
+  // Generate initial platforms
+  for (let i = 0; i < 6; i++) {
+    addPlatform();
+  }
 }
 
 function addPlatform() {
   const last = platforms.at(-1);
-  platforms.push({
-    x: last.x + last.width + 80 + speed * 8,
-    y: clamp(last.y + rand(-60, 60), groundY - 150, groundY + 120),
-    width: rand(110, 150),
-    height: 20
-  });
+  const platformColors = ['#ff4757', '#ff3838', '#ff0000', '#ff6b6b'];
+  
+  // Случайная высота (более сложная)
+  let newY;
+  if (mode === 'narrowPlatforms') {
+    newY = clamp(lastPlatformY + rand(-120, 120), groundY - 200, groundY + 200);
+  } else {
+    newY = clamp(lastPlatformY + rand(-100, 100), groundY - 180, groundY + 180);
+  }
+  lastPlatformY = newY;
+  
+  // Ширина платформы
+  let width;
+  if (mode === 'narrowPlatforms') {
+    width = rand(80, 120); // Уже обычного
+  } else {
+    width = rand(90, 140); // Уже на 25%
+  }
+  
+  const newPlatform = {
+    x: last.x + last.width + 70 + speed * 12, // Меньше расстояние
+    y: newY,
+    width: width,
+    height: 18, // Тоньше
+    color: platformColors[Math.floor(Math.random() * platformColors.length)]
+  };
+  
+  // Движущиеся платформы для соответствующего режима
+  if (mode === 'movingPlatforms' && Math.random() > 0.5) {
+    newPlatform.moving = true;
+    newPlatform.moveSpeed = rand(1, 2);
+    newPlatform.direction = Math.random() > 0.5 ? 1 : -1;
+  }
+  
+  platforms.push(newPlatform);
 }
 
-/* ================= INPUT ================= */
-function jump() {
-  if (!paused && cube.grounded) {
-    cube.vy = -config.jump;
-    cube.grounded = false;
+/* ================= PARTICLES ================= */
+function createParticles(x, y, count, color) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: x,
+      y: y,
+      vx: rand(-4, 4),
+      vy: rand(-6, -3),
+      size: rand(2, 6),
+      color: color || '#ff4757',
+      life: 1.0,
+      decay: rand(0.03, 0.07)
+    });
   }
 }
 
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.15; // Более быстрая гравитация
+    p.life -= p.decay;
+    
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+    }
+  }
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, p.size, p.size);
+  });
+  ctx.globalAlpha = 1.0;
+}
+
+/* ================= COMBO SYSTEM ================= */
+function addCombo() {
+  combo++;
+  if (combo > 1) {
+    comboEl.style.display = 'block';
+    comboEl.textContent = `COMBO x${combo}!`;
+    comboEl.style.fontSize = 20 + combo * 2 + 'px';
+    
+    // Анимация
+    comboEl.style.animation = 'pulse 0.3s ease';
+    setTimeout(() => {
+      comboEl.style.animation = '';
+    }, 300);
+    
+    // Бонусные очки за комбо
+    if (combo >= 3) {
+      score += Math.floor(combo / 3);
+      scoreEl.textContent = score;
+      scoreEl.classList.add('score-animation');
+      setTimeout(() => {
+        scoreEl.classList.remove('score-animation');
+      }, 300);
+    }
+  }
+  
+  clearTimeout(comboTimeout);
+  comboTimeout = setTimeout(() => {
+    combo = 0;
+    comboEl.style.display = 'none';
+  }, 2000);
+}
+
+/* ================= INPUT HANDLING ================= */
+function jump() {
+  if (gameOver) {
+    startNewGame();
+    return;
+  }
+  
+  if (!paused && cube.grounded) {
+    cube.vy = -config.jump;
+    cube.grounded = false;
+    
+    // Создание частиц
+    createParticles(
+      cube.x + cube.size / 2,
+      cube.y + cube.size,
+      10,
+      cube.color
+    );
+    
+    // Добавить в трейл
+    cube.trail.push({x: cube.x, y: cube.y, life: 1.0});
+    if (cube.trail.length > 8) cube.trail.shift();
+    
+    // Эффект кнопки
+    jumpBtn.style.animation = 'pulse 0.15s ease';
+    setTimeout(() => {
+      jumpBtn.style.animation = '';
+    }, 150);
+    
+    // Скриншейк при высоком комбо
+    if (combo >= 5) {
+      screenShake = 5;
+    }
+  }
+}
+
+// Button events
 jumpBtn.addEventListener('click', jump);
 jumpBtn.addEventListener('touchstart', e => {
   e.preventDefault();
   jump();
 }, { passive: false });
 
-pauseBtn.onclick = togglePause;
+pauseBtn.addEventListener('click', togglePause);
 
+// Keyboard controls
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') togglePause();
+  if (e.code === 'Space' || e.key === ' ' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    jump();
+  } else if (e.key === 'Escape' || e.key === 'Pause') {
+    togglePause();
+  }
 });
 
-/* ================= PAUSE ================= */
+// Touch controls
+let touchStartY = 0;
+document.addEventListener('touchstart', e => {
+  if (!e.target.closest('button') && !e.target.closest('select')) {
+    e.preventDefault();
+    touchStartY = e.touches[0].clientY;
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', e => {
+  if (!e.target.closest('button') && !e.target.closest('select')) {
+    e.preventDefault();
+    jump();
+  }
+}, { passive: false });
+
+/* ================= GAME MENUS ================= */
 function togglePause() {
+  if (gameOver) return;
+  
   paused = !paused;
   pauseMenu.style.display = paused ? 'flex' : 'none';
-
+  
   if (!paused) {
-    config = DIFFICULTIES[difficulty.value];
-    mode = document.getElementById('mode').value;
+    updateConfig();
   }
 }
 
-/* ================= UPDATE ================= */
+function showPauseMenu() {
+  gameOverMenu.style.display = 'none';
+  pauseMenu.style.display = 'flex';
+  paused = true;
+}
+
+function showGameOver() {
+  gameOver = true;
+  paused = true;
+  
+  finalScoreEl.textContent = score;
+  bestScoreDisplay.textContent = bestScore;
+  
+  // Случайные сообщения о смерти
+  const messages = [
+    "Сложность побеждает!",
+    "Слишком быстро!",
+    "Гравитация жестока!",
+    "Попробуй ещё раз!",
+    "Ты был близок!",
+    "Скорость убивает!",
+    "Нужно больше практики!",
+    "Хардкор - это сложно!"
+  ];
+  deathMessage.textContent = messages[Math.floor(Math.random() * messages.length)];
+  
+  gameOverMenu.style.display = 'flex';
+  
+  // Эффекты проигрыша
+  for (let i = 0; i < 80; i++) {
+    createParticles(
+      cube.x + cube.size / 2,
+      cube.y + cube.size / 2,
+      1,
+      ['#ff4757', '#ff0000', '#ff3838'][Math.floor(Math.random() * 3)]
+    );
+  }
+}
+
+function updateConfig() {
+  config = DIFFICULTIES[difficultySelect.value];
+  mode = modeSelect.value;
+  updateDifficultyWarning();
+}
+
+function updateDifficultyWarning() {
+  const warnings = {
+    hard: "Сложность: +25% от стандартной",
+    extreme: "ВНИМАНИЕ: +25% от ХАРДА!",
+    nightmare: "ОСТОРОЖНО: +50% от ХАРДА!",
+    impossible: "БЕЗУМИЕ: +100% от ХАРДА!"
+  };
+  difficultyWarning.textContent = warnings[difficultySelect.value];
+}
+
+function hideInstructions() {
+  instructions.style.display = 'none';
+  if (paused) {
+    togglePause();
+  }
+}
+
+function resetBestScore() {
+  if (confirm("Точно сбросить рекорд?")) {
+    bestScore = 0;
+    bestEl.textContent = '0';
+    bestScoreDisplay.textContent = '0';
+    localStorage.setItem('jumpCubeHardBestScore', '0');
+  }
+}
+
+/* ================= GAME LOGIC ================= */
 function update() {
-  if (paused) return;
-
-  let gravity = config.gravity;
-  if (mode === 'gravityChaos') gravity += rand(-0.2, 0.2);
-
-  cube.vy += gravity;
+  if (paused || gameOver) return;
+  
+  updateParticles();
+  updateCubeTrail();
+  
+  // Режимы игры
+  let currentGravity = config.gravity;
+  let speedMultiplier = 1;
+  
+  switch (mode) {
+    case 'gravityChaos':
+      currentGravity += rand(-0.4, 0.4);
+      cube.color = ['#ff4757', '#ffa502', '#2ed573'][Math.floor(Date.now()/200)%3];
+      break;
+    case 'speedRush':
+      speedMultiplier = 2.0;
+      if (speed * speedMultiplier > 8) {
+        speedWarning.style.display = 'block';
+      }
+      break;
+    case 'narrowPlatforms':
+      // Уже обрабатывается при создании платформ
+      break;
+  }
+  
+  // Обновление куба
+  cube.vy += currentGravity;
   cube.y += cube.vy;
   cube.grounded = false;
-
+  
+  // Обновление трейла
+  cube.trail.forEach(t => t.life -= 0.02);
+  cube.trail = cube.trail.filter(t => t.life > 0);
+  
+  // Столкновения с платформами
+  let landedThisFrame = false;
   for (const p of platforms) {
+    // Движение платформ
+    if (p.moving) {
+      p.y += p.moveSpeed * p.direction;
+      if (p.y < groundY - 250 || p.y > groundY + 250) {
+        p.direction *= -1;
+      }
+    }
+    
+    // Проверка столкновения
     if (
       cube.vy >= 0 &&
       cube.x + cube.size > p.x &&
       cube.x < p.x + p.width &&
       cube.y + cube.size >= p.y &&
-      cube.y + cube.size <= p.y + p.height
+      cube.y + cube.size <= p.y + p.height + 8
     ) {
       cube.y = p.y - cube.size;
       cube.vy = 0;
       cube.grounded = true;
+      landedThisFrame = true;
+      
+      // Эффекты приземления
+      if (!p.landed) {
+        createParticles(cube.x + cube.size / 2, cube.y + cube.size, 8, p.color);
+        addCombo();
+        p.landed = true;
+        
+        // Скриншейк при сильном падении
+        if (cube.vy > 15) {
+          screenShake = 3;
+        }
+      }
+    } else {
+      p.landed = false;
     }
   }
-
-  const speedMul = mode === 'speedRush' ? 2 : 1;
-  platforms.forEach(p => p.x -= speed * speedMul);
-
-  if (platforms.at(-1).x < GAME_WIDTH) addPlatform();
-
+  
+  // Сброс комбо если не приземлился
+  if (!landedThisFrame && combo > 0) {
+    combo = 0;
+    comboEl.style.display = 'none';
+  }
+  
+  // Движение платформ
+  platforms.forEach(p => p.x -= speed * speedMultiplier);
+  
+  // Добавление новых платформ
+  if (platforms.at(-1).x < GAME_WIDTH - 80) {
+    addPlatform();
+  }
+  
+  // Удаление пройденных платформ
   if (platforms[0].x + platforms[0].width < 0) {
     platforms.shift();
     score++;
     scoreEl.textContent = score;
+    scoreEl.classList.add('score-animation');
+    
+    // Частицы за очки
+    createParticles(40, 40, 5, '#ff4757');
+    
+    setTimeout(() => {
+      scoreEl.classList.remove('score-animation');
+    }, 300);
   }
-
-  speed += config.speedGrowth * speedMul;
-
-  if (cube.y > GAME_HEIGHT) restart();
+  
+  // Увеличение скорости
+  speed += config.speedGrowth * speedMultiplier;
+  speedValue.textContent = (speed / 3).toFixed(1) + 'x';
+  
+  // Скриншейк
+  if (screenShake > 0) {
+    screenShake--;
+  }
+  
+  // Предупреждение о скорости
+  if (speed * speedMultiplier > 10) {
+    speedWarning.style.display = 'block';
+  } else {
+    speedWarning.style.display = 'none';
+  }
+  
+  // Проверка конца игры
+  if (cube.y > GAME_HEIGHT + 100) {
+    endGame();
+  }
 }
 
-/* ================= DRAW ================= */
+function updateCubeTrail() {
+  cube.trail.forEach(t => {
+    t.life -= 0.05;
+  });
+  cube.trail = cube.trail.filter(t => t.life > 0);
+}
+
 function draw() {
-  ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
-  ctx.fillStyle = '#fff';
-  ctx.shadowColor = '#4ef3c2';
-  ctx.shadowBlur = 14;
-  ctx.fillRect(cube.x, cube.y, cube.size, cube.size);
+  // Очистка с учетом скриншейка
+  let shakeX = screenShake > 0 ? rand(-screenShake, screenShake) : 0;
+  let shakeY = screenShake > 0 ? rand(-screenShake/2, screenShake/2) : 0;
+  
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+  
+  // Темный градиентный фон
+  ctx.fillStyle = '#0a1418';
+  ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+  
+  // Эффект скорости (размытые линии)
+  if (speed > 5) {
+    for (let i = 0; i < 5; i++) {
+      ctx.strokeStyle = `rgba(255, 71, 87, ${0.1 - i * 0.02})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-100 + (Date.now() * speed * 0.01) % 200, i * 100);
+      ctx.lineTo(GAME_WIDTH + 100, i * 100);
+      ctx.stroke();
+    }
+  }
+  
+  // Трейл куба
+  cube.trail.forEach((t, i) => {
+    ctx.globalAlpha = t.life * 0.5;
+    ctx.fillStyle = cube.color;
+    const size = cube.size * (0.5 + i * 0.1);
+    ctx.fillRect(
+      t.x + (cube.size - size) / 2,
+      t.y + (cube.size - size) / 2,
+      size,
+      size
+    );
+  });
+  ctx.globalAlpha = 1.0;
+  
+  // Частицы
+  drawParticles();
+  
+  // Платформы
+  platforms.forEach(p => {
+    // Тень платформы
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(p.x + 3, p.y + 3, p.width, p.height);
+    
+    // Платформа
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 20;
+    ctx.fillRect(p.x, p.y, p.width, p.height);
+    
+    // Подсветка
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.fillRect(p.x, p.y, p.width, 4);
+    
+    // Эффект для движущихся платформ
+    if (p.moving) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.fillRect(p.x + 5, p.y + 5, 10, p.height - 10);
+    }
+  });
   ctx.shadowBlur = 0;
-
-  ctx.fillStyle = '#4ef3c2';
-  platforms.forEach(p => ctx.fillRect(p.x, p.y, p.width, p.height));
+  
+  // Куб
+  ctx.fillStyle = cube.color;
+  ctx.shadowColor = cube.color;
+  ctx.shadowBlur = 25;
+  ctx.fillRect(cube.x, cube.y, cube.size, cube.size);
+  
+  // Детали куба
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.fillRect(cube.x + 8, cube.y + 8, cube.size - 16, 10);
+  
+  // Эффект при комбо
+  if (combo >= 3) {
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(cube.x - 3, cube.y - 3, cube.size + 6, cube.size + 6);
+  }
+  
+  ctx.shadowBlur = 0;
+  ctx.restore();
 }
 
-/* ================= LOOP ================= */
-function loop() {
-  update();
-  draw();
-  requestAnimationFrame(loop);
+/* ================= GAME FLOW ================= */
+function endGame() {
+  // Обновление рекорда
+  if (score > bestScore) {
+    bestScore = score;
+    bestEl.textContent = bestScore;
+    bestScoreDisplay.textContent = bestScore;
+    localStorage.setItem('jumpCubeHardBestScore', bestScore);
+    
+    // Эффект нового рекорда
+    for (let i = 0; i < 150; i++) {
+      createParticles(GAME_WIDTH / 2, GAME_HEIGHT / 2, 1, '#ffd700');
+    }
+  }
+  
+  showGameOver();
 }
 
-/* ================= HELPERS ================= */
-function rand(min, max) { return Math.random() * (max - min) + min; }
-function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-
-/* ================= START ================= */
-function restart() {
-  config = DIFFICULTIES[difficulty.value];
+function restartGame() {
+  gameOver = false;
+  paused = false;
+  
   cube.y = groundY - 60;
   cube.vy = 0;
-  speed = config.baseSpeed;
+  cube.trail = [];
+  cube.color = '#ff4757';
   score = 0;
-  scoreEl.textContent = 0;
+  combo = 0;
+  speed = config.baseSpeed;
+  screenShake = 0;
+  
+  scoreEl.textContent = '0';
+  comboEl.style.display = 'none';
+  speedWarning.style.display = 'none';
+  pauseMenu.style.display = 'none';
+  gameOverMenu.style.display = 'none';
+  
+  particles = [];
   initPlatforms();
 }
 
-restart();
-loop();
+function startNewGame() {
+  updateConfig();
+  restartGame();
+}
+
+/* ================= GAME LOOP ================= */
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+function startGameLoop() {
+  requestAnimationFrame(gameLoop);
+}
+
+/* ================= UTILITIES ================= */
+function rand(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+/* ================= INITIALIZE GAME ================= */
+init();
 </script>
 
 </body>
