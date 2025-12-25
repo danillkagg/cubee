@@ -1,159 +1,214 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>cubee</title>
+<title>Jump Cube</title>
 
 <style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    background: #222;
-    font-family: sans-serif;
-    color: #fff;
-    touch-action: manipulation;
-  }
+:root {
+  --bg1: #0f2027;
+  --bg2: #203a43;
+  --bg3: #2c5364;
+  --accent: #4ef3c2;
+  --danger: #ff5f6d;
+}
 
-  canvas {
-    display: block;
-    margin: 0 auto;
-    background: #333;
-  }
+* {
+  box-sizing: border-box;
+}
 
-  #ui-left {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 10;
-  }
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+  background: linear-gradient(180deg, var(--bg1), var(--bg2), var(--bg3));
+  color: #fff;
+  touch-action: manipulation;
+}
 
-  #ui-right {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-    text-align: right;
-  }
+canvas {
+  display: block;
+}
 
-  button {
-    padding: 12px 24px;
-    font-size: 18px;
-  }
+.ui {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
 
-  #jumpBtn {
-    position: absolute;
-    bottom: 35px;
-    left: 60%;
-    transform: translateX(-60%);
-    z-index: 20;
-    font-size: 38px;
-    padding: 35px 70px;
-    border-radius: 22px;
-  }
+.panel {
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px);
+  padding: 12px 18px;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  pointer-events: auto;
+}
+
+.panel div {
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+button {
+  border: none;
+  border-radius: 14px;
+  font-size: 20px;
+  padding: 14px 26px;
+  background: linear-gradient(135deg, var(--accent), #3acfd5);
+  color: #002;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+button:active {
+  transform: translateY(2px);
+}
+
+#jumpBtn {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 26px;
+  padding: 24px 70px;
+}
+
+.game-over {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.55);
+  font-size: 42px;
+  font-weight: 800;
+  display: none;
+}
 </style>
 </head>
 
 <body>
 
-<canvas id="gameCanvas"></canvas>
+<canvas id="canvas"></canvas>
 
-<div id="ui-left">
-  <div>Очки: <span id="score">0</span></div>
-  <button id="restartBtn">Перезапуск</button>
-</div>
-
-<div id="ui-right">
-  <div>Рекорд: <span id="bestScore">0</span></div>
+<div class="ui">
+  <div class="panel">
+    <div>Очки: <span id="score">0</span></div>
+    <div>Рекорд: <span id="best">0</span></div>
+  </div>
+  <div class="panel">
+    <button id="restartBtn">↻</button>
+  </div>
 </div>
 
 <button id="jumpBtn">ПРЫЖОК</button>
 
+<div id="gameOver" class="game-over">Игра окончена</div>
+
 <script>
-const canvas = document.getElementById('gameCanvas');
+/* =======================
+   CANVAS
+======================= */
+const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-function resizeCanvas() {
+function resize() {
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  canvas.style.width = window.innerWidth + 'px';
-  canvas.style.height = window.innerHeight + 'px';
+  canvas.width = innerWidth * dpr;
+  canvas.height = innerHeight * dpr;
+  canvas.style.width = innerWidth + 'px';
+  canvas.style.height = innerHeight + 'px';
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+resize();
+addEventListener('resize', resize);
 
-const centerY = window.innerHeight / 2;
+/* =======================
+   GAME CONFIG
+======================= */
+const GRAVITY = 0.7;
+const JUMP_FORCE = 13;
 
-// Куб
+let speed = 2.2;
+let speedGrowth = 0.0025;
+
+const centerY = innerHeight * 0.55;
+
+/* =======================
+   GAME STATE
+======================= */
 const cube = {
-  x: 60,
+  x: 80,
   y: centerY - 60,
-  size: 30,
+  size: 34,
   vy: 0,
-  jumpForce: 12.5,
   grounded: false
 };
 
-const gravity = 0.6;
-
-// Платформы
-let platforms = [{
-  x: 0,
-  y: centerY,
-  width: 220,
-  height: 20
-}];
-
-const minY = centerY - 120;
-const maxY = centerY + 80;
-const gapMin = 70;
-const gapMax = 140;
-
-// Скорость
-let speed = 2.2;
-const speedIncrease = 0.003;
-
-// Очки
+let platforms = [];
 let score = 0;
-const scoreEl = document.getElementById('score');
-
-// Рекорд
-let bestScore = Number(localStorage.getItem('bestScore')) || 0;
-const bestScoreEl = document.getElementById('bestScore');
-bestScoreEl.textContent = bestScore;
-
+let best = Number(localStorage.getItem('bestScore')) || 0;
 let gameOver = false;
 
-function jump() {
-  if (gameOver) return;
+/* =======================
+   UI
+======================= */
+const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const gameOverEl = document.getElementById('gameOver');
 
-  if (cube.grounded) {
-    cube.vy = -cube.jumpForce;
+bestEl.textContent = best;
+
+/* =======================
+   INIT
+======================= */
+function initPlatforms() {
+  platforms = [{
+    x: 0,
+    y: centerY,
+    width: 240,
+    height: 20
+  }];
+}
+
+/* =======================
+   INPUT
+======================= */
+function jump() {
+  if (cube.grounded && !gameOver) {
+    cube.vy = -JUMP_FORCE;
     cube.grounded = false;
   }
 }
 
-document.getElementById('jumpBtn').addEventListener('click', jump);
-document.getElementById('jumpBtn').addEventListener('touchstart', e => {
+jumpBtn.onclick = jump;
+jumpBtn.addEventListener('touchstart', e => {
   e.preventDefault();
   jump();
 });
 
-document.getElementById('restartBtn').addEventListener('click', restartGame);
+restartBtn.onclick = restart;
 
-function generatePlatform() {
+/* =======================
+   GAME LOGIC
+======================= */
+function addPlatform() {
   const last = platforms[platforms.length - 1];
-  const gap = Math.random() * (gapMax - gapMin) + gapMin;
-
-  let y = last.y + (Math.random() - 0.5) * 80;
-  y = Math.max(minY, Math.min(maxY, y));
+  const gap = rand(90, 160);
+  let y = last.y + rand(-90, 90);
+  y = clamp(y, centerY - 160, centerY + 100);
 
   platforms.push({
     x: last.x + last.width + gap,
     y,
-    width: 110,
+    width: rand(100, 140),
     height: 20
   });
 }
@@ -161,7 +216,7 @@ function generatePlatform() {
 function update() {
   if (gameOver) return;
 
-  cube.vy += gravity;
+  cube.vy += GRAVITY;
   cube.y += cube.vy;
   cube.grounded = false;
 
@@ -181,9 +236,7 @@ function update() {
 
   platforms.forEach(p => p.x -= speed);
 
-  if (platforms[platforms.length - 1].x < canvas.width) {
-    generatePlatform();
-  }
+  if (platforms.at(-1).x < canvas.width) addPlatform();
 
   if (platforms[0].x + platforms[0].width < 0) {
     platforms.shift();
@@ -191,71 +244,85 @@ function update() {
     scoreEl.textContent = score;
   }
 
-  speed += speedIncrease;
+  speed += speedGrowth;
 
-  if (cube.y > canvas.height) {
-    endGame();
-  }
+  if (cube.y > canvas.height) finish();
 }
 
-function endGame() {
-  gameOver = true;
-
-  if (score > bestScore) {
-    bestScore = score;
-    bestScoreEl.textContent = bestScore;
-    localStorage.setItem('bestScore', bestScore);
-  }
-}
-
+/* =======================
+   RENDER
+======================= */
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = 'red';
+  // Cube
+  ctx.fillStyle = '#fff';
+  ctx.shadowColor = '#4ef3c2';
+  ctx.shadowBlur = 20;
   ctx.fillRect(cube.x, cube.y, cube.size, cube.size);
+  ctx.shadowBlur = 0;
 
-  ctx.fillStyle = 'lime';
-  platforms.forEach(p => ctx.fillRect(p.x, p.y, p.width, p.height));
-
-  if (gameOver) {
-    ctx.fillStyle = '#fff';
-    ctx.font = '36px sans-serif';
-    ctx.fillText('Игра окончена', canvas.width / 2 - 130, canvas.height / 2);
-  }
+  // Platforms
+  ctx.fillStyle = '#4ef3c2';
+  platforms.forEach(p =>
+    ctx.fillRect(p.x, p.y, p.width, p.height)
+  );
 }
 
+/* =======================
+   LOOP
+======================= */
 function loop() {
   update();
   draw();
   requestAnimationFrame(loop);
 }
 
-function restartGame() {
+/* =======================
+   GAME FLOW
+======================= */
+function finish() {
+  gameOver = true;
+  gameOverEl.style.display = 'flex';
+
+  if (score > best) {
+    best = score;
+    bestEl.textContent = best;
+    localStorage.setItem('bestScore', best);
+  }
+}
+
+function restart() {
   cube.y = centerY - 60;
   cube.vy = 0;
   cube.grounded = false;
 
-  platforms = [{
-    x: 0,
-    y: centerY,
-    width: 220,
-    height: 20
-  }];
-
-  speed = 2;
+  speed = 2.2;
   score = 0;
-  scoreEl.textContent = score;
+  scoreEl.textContent = 0;
   gameOver = false;
+  gameOverEl.style.display = 'none';
+
+  initPlatforms();
 }
 
+/* =======================
+   HELPERS
+======================= */
+function rand(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+/* =======================
+   START
+======================= */
+initPlatforms();
 loop();
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
