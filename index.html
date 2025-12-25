@@ -2,16 +2,11 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1, viewport-fit=cover">
-
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Jump Cube</title>
 
 <style>
-* {
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-}
+* { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
 body {
   margin: 0;
@@ -21,9 +16,7 @@ body {
   color: #fff;
 }
 
-canvas {
-  display: block;
-}
+canvas { display: block; }
 
 .ui {
   position: absolute;
@@ -43,44 +36,22 @@ canvas {
   pointer-events: auto;
 }
 
-button, select {
+button {
   border: none;
   border-radius: 14px;
   padding: 12px 18px;
   font-size: 16px;
   font-weight: 600;
-}
-
-button {
   background: linear-gradient(135deg,#4ef3c2,#3acfd5);
 }
 
 #jumpBtn {
   position: absolute;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  bottom: calc(env(safe-area-inset-bottom,0px) + 20px);
   left: 50%;
   transform: translateX(-50%);
   font-size: 24px;
   padding: 20px 72px;
-  z-index: 5;
-}
-
-.overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,.65);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-
-.menu {
-  background: rgba(0,0,0,.55);
-  padding: 28px;
-  border-radius: 20px;
-  text-align: center;
-  min-width: 280px;
 }
 </style>
 </head>
@@ -94,44 +65,14 @@ button {
     Очки: <span id="score">0</span><br>
     Рекорд: <span id="best">0</span>
   </div>
-  <div class="panel">
-    <button id="pauseBtn">⏸</button>
-  </div>
 </div>
 
 <button id="jumpBtn">ПРЫЖОК</button>
 
-<div id="pauseMenu" class="overlay">
-  <div class="menu">
-    <h2>Пауза</h2>
-
-    <div>
-      Сложность:<br>
-      <select id="difficulty">
-        <option value="easy">Лёгкая</option>
-        <option value="normal" selected>Нормальная</option>
-        <option value="hard">Хард</option>
-      </select>
-    </div><br>
-
-    <div>
-      Режим:<br>
-      <select id="modeSelect">
-        <option value="classic">Классика</option>
-        <option value="gravityChaos">Хаос гравитации</option>
-        <option value="speedRush">Speed Rush</option>
-      </select>
-    </div><br>
-
-    <button id="resumeBtn">Продолжить</button>
-  </div>
-</div>
-
 <script>
+/* ===== CANVAS ===== */
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-
-const SCALE = Math.min(innerWidth / 390, 1.15);
 
 function resize() {
   const dpr = devicePixelRatio || 1;
@@ -143,79 +84,78 @@ function resize() {
 resize();
 addEventListener('resize', resize);
 
-const DIFFICULTIES = {
-  easy:   { gravity:0.6, jump:13,   baseSpeed:2,   speedGrowth:0.0015 },
-  normal: { gravity:0.7, jump:12.5, baseSpeed:2.4, speedGrowth:0.0022 },
-  hard:   { gravity:0.8, jump:12,   baseSpeed:2.9, speedGrowth:0.003 }
+/* ===== SCALE ===== */
+const SCALE = Math.min(innerWidth / 390, 1.15);
+
+/* ===== CENTER ===== */
+const VIEW_H = window.visualViewport ? visualViewport.height : innerHeight;
+const CENTER_Y = VIEW_H * 0.5;
+
+/* ===== CONFIG ===== */
+const CONFIG = {
+  gravity: 0.7 * SCALE,
+  jump: 12.5 * SCALE,
+  speed: 2.4 * SCALE,
+  speedGrowth: 0.002
 };
 
-let config = DIFFICULTIES.normal;
-let mode = 'classic';
-
-const centerY = canvas.height / 2;
-
+/* ===== STATE ===== */
 const cube = {
   x: 80 * SCALE,
-  y: centerY - 60 * SCALE,
   size: 34 * SCALE,
+  y: 0,
   vy: 0,
   grounded: false
 };
 
 let platforms = [];
-let speed = 0;
+let speed = CONFIG.speed;
 let score = 0;
 let best = Number(localStorage.getItem('bestScore')) || 0;
-let paused = false;
 
 document.getElementById('best').textContent = best;
 
+/* ===== PLATFORMS ===== */
 function initPlatforms() {
+  const h = 20 * SCALE;
+  const w = 260 * SCALE;
+
   platforms = [{
     x: 0,
-    y: centerY,
-    width: 260 * SCALE,
-    height: 20 * SCALE
+    y: CENTER_Y - h / 2,
+    width: w,
+    height: h
   }];
+
+  cube.y = platforms[0].y - cube.size;
 }
 
 function addPlatform() {
   const last = platforms.at(-1);
   platforms.push({
-    x: last.x + last.width + 80 * SCALE + speed * 8,
-    y: Math.max(centerY-150*SCALE, Math.min(centerY+120*SCALE, last.y + rand(-60,60))),
+    x: last.x + last.width + 80 * SCALE,
+    y: clamp(
+      CENTER_Y + rand(-120, 120) * SCALE,
+      60,
+      canvas.height - 60
+    ),
     width: rand(110,150) * SCALE,
     height: 20 * SCALE
   });
 }
 
+/* ===== INPUT ===== */
 jumpBtn.onpointerdown = e => {
   e.preventDefault();
-  if (!paused && cube.grounded) {
-    cube.vy = -config.jump * SCALE;
+  if (cube.grounded) {
+    cube.vy = -CONFIG.jump;
     cube.grounded = false;
   }
 };
 
-pauseBtn.onpointerdown = togglePause;
-resumeBtn.onpointerdown = togglePause;
-
-function togglePause() {
-  paused = !paused;
-  pauseMenu.style.display = paused ? 'flex' : 'none';
-  if (!paused) {
-    config = DIFFICULTIES[difficulty.value];
-    mode = modeSelect.value;
-  }
-}
-
+/* ===== UPDATE ===== */
 function update() {
-  if (paused) return;
-
-  let gravity = config.gravity;
-  if (mode === 'gravityChaos') gravity += rand(-0.2,0.2);
-
-  cube.vy += gravity * SCALE;
+  cube.vy += CONFIG.gravity;
   cube.y += cube.vy;
   cube.grounded = false;
 
@@ -233,46 +173,50 @@ function update() {
     }
   }
 
-  const speedMul = mode === 'speedRush' ? 2 : 1;
-  platforms.forEach(p => p.x -= speed * speedMul);
+  platforms.forEach(p => p.x -= speed);
 
   if (platforms.at(-1).x < canvas.width) addPlatform();
 
   if (platforms[0].x + platforms[0].width < 0) {
     platforms.shift();
     score++;
-    scoreEl.textContent = score;
+    document.getElementById('score').textContent = score;
   }
 
-  speed += config.speedGrowth * speedMul;
+  speed += CONFIG.speedGrowth;
 
-  if (cube.y > canvas.height) restart();
+  if (cube.y > canvas.height || cube.y < -cube.size) restart();
 }
 
+/* ===== DRAW ===== */
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
+
   ctx.fillStyle = '#fff';
-  ctx.fillRect(cube.x,cube.y,cube.size,cube.size);
+  ctx.fillRect(cube.x, cube.y, cube.size, cube.size);
+
   ctx.fillStyle = '#4ef3c2';
   platforms.forEach(p => ctx.fillRect(p.x,p.y,p.width,p.height));
 }
 
+/* ===== LOOP ===== */
 function loop() {
   update();
   draw();
   requestAnimationFrame(loop);
 }
 
+/* ===== HELPERS ===== */
+function rand(min,max){return Math.random()*(max-min)+min;}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+
+/* ===== START ===== */
 function restart() {
-  speed = config.baseSpeed;
+  speed = CONFIG.speed;
   score = 0;
-  scoreEl.textContent = 0;
-  cube.y = centerY - 60 * SCALE;
-  cube.vy = 0;
+  document.getElementById('score').textContent = 0;
   initPlatforms();
 }
-
-function rand(min,max){return Math.random()*(max-min)+min;}
 
 restart();
 loop();
