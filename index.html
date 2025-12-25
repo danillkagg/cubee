@@ -92,11 +92,11 @@ const cube = {
   y: centerY - 60,
   size: 30,
   vy: 0,
-  jumpForce: 12,
+  jumpForce: 15,
   grounded: false
 };
 
-const gravity = 0.6;
+const gravity = 0.5;
 
 // Платформы
 let platforms = [{
@@ -112,8 +112,8 @@ const gapMin = 70;
 const gapMax = 140;
 
 // Скорость
-let speed = 2;
-const speedIncrease = 0.002;
+let speed = 2.2;
+const speedIncrease = 0.003;
 
 // Очки
 let score = 0;
@@ -253,4 +253,5 @@ loop();
 
 </body>
 </html>
+
 
